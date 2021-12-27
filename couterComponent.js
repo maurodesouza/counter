@@ -1,4 +1,4 @@
-// IIFE Invoke Funcion Expression
+// IIFE => Immeately Invoked Function Expression
 
 (() => {
     const BTN_RESTART = 'btnRestart'
