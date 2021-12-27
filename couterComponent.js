@@ -4,76 +4,64 @@
     const BTN_RESTART = 'btnRestart'
     const ID_COUNTER = 'counter'
 
-    const COUNTER_VALUE = 100
+    const INIT_COUNTER_VALUE = 100
     const INTERVAl = 10
 
     class CounterComponent {
         constructor() {
+            this.getElements()
+            this.preperCounterProxy()
+
             this.init()
+        }
+
+        getElements = () => {
+            this.counterEl = document.getElementById(ID_COUNTER)
+            this.btnRestart = document.getElementById(BTN_RESTART)
+
+            this.addEvents()
+        }
+
+        addEvents = () => {
+            this.btnRestart.addEventListener('click', this.init.bind(this))
         }
 
         preperCounterProxy() {
             const handler = {
-                set: (currentContext, propertyKey, newValue) => {
-                    if (!currentContext.value) currentContext.stop()
-                    
-                    currentContext[propertyKey] = newValue
+                set: (context, key, newValue) => {
+
+                    if (!context.value) this.stopCounter()
+                    context[key] = newValue
 
                     return true
                 }
             }
 
-            const counter = new Proxy({
-                value: COUNTER_VALUE,
-                stop: () => {}
-            }, handler)
-
-            return counter
+            this.counter = new Proxy({ value: INIT_COUNTER_VALUE }, handler)
         }
 
-        updateText = ({ counterEl, counter }) => () => {
-            const identifier = '$$counter'
-            const defaultText = `Starting in <strong>${identifier}</strong> seconds...`
-
-            counterEl.innerHTML = defaultText.replace(identifier, counter.value--)
+        updateCounter = () => {
+            this.counterEl.innerHTML = `Starting in <strong>${this.counter.value--}</strong> seconds...`
         }
 
-        stopCounter(idInterval) {
-            return () => {
-                clearInterval(idInterval)
+        stopCounter = () => {
+            clearInterval(this.intervalId)
 
-                this.disableButton(false)
-            }
+            this.disableRestartBtn(false)
         }
 
-        restartCounter = (btnRestart, fn) => {
-            btnRestart.addEventListener('click', fn.bind(this))
+        disableRestartBtn = (disable = true) => {
+            const attr = 'disabled'
 
-            return (disabled = true) => {
-                const attr = 'disabled'
-
-                if (disabled) btnRestart.setAttribute(attr, disabled)
-                else btnRestart.removeAttribute(attr) 
-            }
+            if (disable) this.btnRestart.setAttribute(attr, disable)
+            else this.btnRestart.removeAttribute(attr) 
         }
 
         init() {
-            const counterEl = document.getElementById(ID_COUNTER)
-            const btnRestart = document.getElementById(BTN_RESTART)
+            this.counter.value = INIT_COUNTER_VALUE
+            this.disableRestartBtn()
 
-            const counter = this.preperCounterProxy()
-            const args = { counterEl, counter }
-
-            const fn = this.updateText(args)
-            const idInterval = setInterval(fn, INTERVAl)
-
-            const disableButton = this.restartCounter(btnRestart, this.init)
-            disableButton()
-
-            {
-                const fn = this.stopCounter.apply({ disableButton }, [idInterval])
-                counter.stop = fn
-            }
+            this.intervalId = setInterval(this.updateCounter, INTERVAl)
         }
     }
 
